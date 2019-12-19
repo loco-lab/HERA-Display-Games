@@ -27,6 +27,8 @@ def get_gamepad():
 def get_next_movement(device):
     for event in device.read_loop():
         cat = event.type
+
+        # EV_ABS seems like its the type for direction pressing
         if cat == ecodes.EV_ABS:
             if ecodes.ABS[event.code] == "ABS_Y":
                 if event.value == 0:
@@ -43,11 +45,22 @@ def get_next_movement(device):
                 else:
                     return None  # 'release'
 
+        # EV_KEY seems like any other kind of key.
         elif cat == ecodes.EV_KEY:
-            return
-
-
-#            print(ecodes.BTN[event.code])
+            if event.value == 0:
+                return None
+            else:
+                if type(ecodes.BTN[event.code]) == list:
+                    return "x"
+                return {
+                    "BTN_BASE3": "select",
+                    "BTN_BASE4": "start",
+                    "BTN_TOP": "y",
+                    "BTN_THUMB2": "b",
+                    "BTN_THUMB": "a",
+                    "BTN_BASE": "r-trigger",
+                    "BTN_TOP2": "l-trigger",
+                }[ecodes.BTN[event.code]]
 
 
 def map_movement(device):
@@ -75,18 +88,19 @@ def map_movement(device):
                 return f"{val}{newval}"
             elif newval == val:
                 continue
-            elif newval:
+            elif newval in "ud":
                 break
             else:
-                continue
+                return newval
 
-        if val in "lr":
+        if val not in "ud":
             return val
 
 
 if __name__ == "__main__":
     device = get_gamepad()
-    print(evdev.ecodes.ABS)
 
     while True:
         print(map_movement(device))
+    # while True:
+    #     print(map_movement(device))
