@@ -7,12 +7,7 @@
     PyScaffold helps you to put up the scaffold of your new Python project.
     Learn more under: https://pyscaffold.org/
 """
-import sys
-
-from pkg_resources import VersionConflict, require
 from setuptools import setup
 
-
 if __name__ == "__main__":
-    setup(use_pyscaffold=True,
-          use_scm_version=True)
+    setup(use_pyscaffold=True, use_scm_version=True)
