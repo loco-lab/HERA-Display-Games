@@ -6,7 +6,10 @@ for device in devices:
 
 
 device = evdev.InputDevice('/dev/input/event2')
-print(device)
+#print(device)
 for event in device.read_loop():
-    if event.type == evdev.ecodes.EV_KEY:
-        print(evdev.categorize(event))
+    print(event.type)
+    print(evdev.categorize(event))
+    print('\n')
+    #if event.type == evdev.ecodes.EV_KEY:
+        #print(evdev.categorize(event))
