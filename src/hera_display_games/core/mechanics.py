@@ -67,10 +67,11 @@ class Board:
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
-        try:
-            self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
-        except KeyError:
-            raise OutOfBoundsError()
+        if led_map[tuple(loc)] != "dead":
+            try:
+                self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
+            except KeyError:
+                raise OutOfBoundsError()
 
     def clear(self):
         """Turn off all LEDs"""
