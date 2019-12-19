@@ -1,5 +1,5 @@
 import numpy as np
-from . import mechanics
+import mechanics
 import time
 
 my_sprite = mechanics.Sprite(np.array([0, 0]))

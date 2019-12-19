@@ -1,6 +1,6 @@
 import numpy as np
 import neopixel
-from . import map_dict
+import map_dict
 
 led_map = map_dict.led_map
 # LED strip configuration:
