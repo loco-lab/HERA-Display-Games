@@ -11,8 +11,6 @@ import numpy as np
 import pandas as pd
 import neopixel
 
-from neopixel import *
-
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--clear", action="store_true", help="clear the display on exit")
 args = parser.parse_args()
