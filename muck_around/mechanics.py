@@ -58,7 +58,7 @@ class Board:
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
-        self.strip.setPixelColorRGB(led_map[loc], rgb[0], rgb[1], rgb[2])
+        self.strip.setPixelColorRGB(led_map[list(loc)], rgb[0], rgb[1], rgb[2])
 
     def clear(self):
         """Turn off all LEDs"""
@@ -70,7 +70,7 @@ class Board:
         """Draw the board and update the display"""
         # TODO: draw background
         for loc in self.last_locs:
-            self.strip.setPixelColorRGB(loc, self.bg[loc])
+            self.strip.setPixelColorRGB(loc, self.bg[list(loc)])
         self.last_locs = [sp.location for sp in self.sprites]
         for sp in self.sprites:
             self.strip.setPixelColorRGB(sp.location, sp.color)
