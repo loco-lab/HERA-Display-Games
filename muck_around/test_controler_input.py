@@ -28,3 +28,6 @@ while True:
     if response in ["ul", "ur", "dl", "dr", "r", "l"]:
         my_sprite.move(response)
         my_board.draw()
+    elif response in ['r-trigger', 'l-trigger']:
+        my_sprite.color = np.random.randint(0, 255, size=3).astype(int).tolist()
+        my_board.draw()
