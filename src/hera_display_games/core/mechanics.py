@@ -1,6 +1,6 @@
 import numpy as np
 import neopixel
-from . import map_dict
+from hera_display_games.core import map_dict
 
 led_map = map_dict.led_map
 # LED strip configuration:
@@ -75,3 +75,19 @@ class Board:
         for sp in self.sprites:
             self.set_pix(sp.location, sp.color)
         self.strip.show()
+
+if __name__=="__main__":
+    import numpy as np
+    import time
+
+    my_sprite = Sprite(np.array([0, 0]))
+
+    my_board = Board(sprites=[my_sprite])
+    my_board.draw()
+
+    directions = ["r", "r", "l", "ur", "ur", "ul"]
+
+    for dir in directions:
+        time.sleep(1)
+        my_sprite.move(dir)
+        my_board.draw()
