@@ -1,6 +1,7 @@
 import numpy as np
 import neopixel
 import map_dict
+import time
 
 led_map = map_dict.led_map
 # LED strip configuration:
@@ -44,7 +45,7 @@ class Board:
     def __init__(self, sprites=[], bg=None):
         """Init for the board."""
         self.sprites = sprites
-        self.last_locs = [sp.location for sp in self.sprites]
+        self.last_locs = [sp.location.copy() for sp in self.sprites]
         self.strip = neopixel.Adafruit_NeoPixel(
             LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL
         )
@@ -71,7 +72,7 @@ class Board:
         # TODO: draw background
         for loc in self.last_locs:
             self.set_pix(loc, self.bg[tuple(loc)])
-        self.last_locs = [sp.location for sp in self.sprites]
+        self.last_locs = [sp.location.copy() for sp in self.sprites]
         for sp in self.sprites:
             self.set_pix(sp.location, sp.color)
         self.strip.show()
