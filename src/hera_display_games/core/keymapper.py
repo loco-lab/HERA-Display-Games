@@ -5,6 +5,7 @@
 
 import evdev
 from evdev import ecodes
+import asyncio
 
 
 def get_gamepad():
@@ -74,7 +75,7 @@ def get_next_movement(device):
             )
 
 
-def map_movement(device):
+async def map_movement(device):
     """Return human readable movement condition based on input.
 
     Returns
@@ -111,8 +112,7 @@ def map_movement(device):
 
 if __name__ == "__main__":
     device = get_gamepad()
-
+    loop = asyncio.get_event_loop()
     while True:
-        print(map_movement(device))
-    # while True:
-    #     print(map_movement(device))
+        response = loop.run_until_complete(map_movement(device))
+        print(response)
