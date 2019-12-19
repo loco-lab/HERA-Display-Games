@@ -1,6 +1,7 @@
 import numpy as np
 import neopixel
-from hera_display_games.core import map_dict
+import time
+from . import map_dict
 
 led_map = map_dict.led_map
 # LED strip configuration:
@@ -21,6 +22,10 @@ DIR_DICT = {
     "dl": np.array([-1, -1]),
     "l": np.array([-1, 0]),
 }
+
+
+class OutOfBoundsError(Exception):
+    pass
 
 
 class Sprite:
@@ -58,7 +63,10 @@ class Board:
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
-        self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
+        try:
+            self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
+        except KeyError:
+            raise OutOfBoundsError()
 
     def clear(self):
         """Turn off all LEDs"""
@@ -74,26 +82,16 @@ class Board:
 
     def draw(self):
         """Draw the board and update the display"""
-        # TODO: draw background
         for loc in self.last_locs:
             self.set_pix(loc, self.bg[tuple(loc)])
+        for i, sp in enumerate(self.sprites):
+            try:
+                self.set_pix(sp.location, sp.color)
+            except OutOfBoundsError:
+                sp.location = self.last_locs[i]
+                # Flash red if it can't move any further
+                self.set_pix(sp.location, (155, 0, 0))
+                time.sleep(0.5)
+                self.set_pix(sp.location, sp.color)
         self.last_locs = [sp.location.copy() for sp in self.sprites]
-        for sp in self.sprites:
-            self.set_pix(sp.location, sp.color)
         self.strip.show()
-
-if __name__=="__main__":
-    import numpy as np
-    import time
-
-    my_sprite = Sprite(np.array([0, 0]))
-
-    my_board = Board(sprites=[my_sprite])
-    my_board.draw()
-
-    directions = ["r", "r", "l", "ur", "ur", "ul"]
-
-    for dir in directions:
-        time.sleep(1)
-        my_sprite.move(dir)
-        my_board.draw()
