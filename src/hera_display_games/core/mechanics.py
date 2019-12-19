@@ -28,6 +28,10 @@ class OutOfBoundsError(Exception):
     pass
 
 
+class SpriteCollision(Exception):
+    pass
+
+
 class Sprite:
     """Class for sprites."""
 
@@ -82,15 +86,22 @@ class Board:
 
     def draw(self):
         """Draw the board and update the display"""
+        # Update previous position of sprite with the background
         for loc in self.last_locs:
             self.set_pix(loc, self.bg[tuple(loc)])
         for i, sp in enumerate(self.sprites):
+            # If the current sprite tries to move to the location of another
+            # sprite, don't let it
+            for sp_other in self.sprites[:i]:
+                if sp.location == sp_other.location:
+                    sp.location = self.last_locs[i]
+            # Also don't let the sprite go out of the bounds of the board
             try:
                 self.set_pix(sp.location, sp.color)
             except OutOfBoundsError:
                 sp.location = self.last_locs[i]
                 # Flash red if it can't move any further
-                self.set_pix(sp.location, (155, 0, 0))
+                self.set_pix(sp.location, [155, 0, 0])
                 time.sleep(0.5)
                 self.set_pix(sp.location, sp.color)
         self.last_locs = [sp.location.copy() for sp in self.sprites]
