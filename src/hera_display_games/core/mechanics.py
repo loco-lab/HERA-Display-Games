@@ -1,4 +1,3 @@
-import numpy as np
 import neopixel
 import time
 from . import map_dict
@@ -15,12 +14,12 @@ LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
 
 DIR_DICT = {
-    "ul": np.array([0, 1]),
-    "ur": np.array([1, 1]),
-    "r": np.array([1, 0]),
-    "dr": np.array([0, -1]),
-    "dl": np.array([-1, -1]),
-    "l": np.array([-1, 0]),
+    "ul": [0, 1],
+    "ur": [1, 1],
+    "r": [1, 0],
+    "dr": [0, -1],
+    "dl": [-1, -1],
+    "l": [-1, 0],
 }
 
 
@@ -35,14 +34,15 @@ class SpriteCollision(Exception):
 class Sprite:
     """Class for sprites."""
 
-    def __init__(self, location=np.array([0, 0]), color=[0, 255, 0]):
+    def __init__(self, location=[0, 0], color=[0, 255, 0]):
         """Init for sprites."""
         self.location = location
         self.color = color
 
     def move(self, direction):
         try:
-            self.location += DIR_DICT[direction]
+            self.location[0] += DIR_DICT[direction][0]
+            self.location[1] += DIR_DICT[direction][1]
         except KeyError:
             raise ValueError("Direction not understood!")
 
