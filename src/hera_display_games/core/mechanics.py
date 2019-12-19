@@ -63,15 +63,16 @@ class Board:
             # Fill in with "off"
             self.bg = {key: [0, 0, 0] for key in led_map.keys()}
         self.strip.begin()
+        self.clear()
         self.draw_background()
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
-        if led_map[tuple(loc)] != "dead":
-            try:
+        try:
+            if led_map[tuple(loc)] != "dead":
                 self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
-            except KeyError:
-                raise OutOfBoundsError()
+        except KeyError:
+            raise OutOfBoundsError()
 
     def clear(self):
         """Turn off all LEDs"""
@@ -103,6 +104,7 @@ class Board:
                 sp.location = self.last_locs[i]
                 # Flash red if it can't move any further
                 self.set_pix(sp.location, [155, 0, 0])
+                self.strip.show()
                 time.sleep(0.5)
                 self.set_pix(sp.location, sp.color)
         self.last_locs = [sp.location.copy() for sp in self.sprites]
