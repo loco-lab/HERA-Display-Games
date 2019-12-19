@@ -69,7 +69,7 @@ class Board:
     def draw_background(self):
         """Draw the background"""
         for loc in self.bg.keys():
-            self.set_pix(loc, self.bg[tuple(loc)])
+            self.set_pix(loc, self.bg[loc])
         self.strip.show()
 
     def draw(self):
