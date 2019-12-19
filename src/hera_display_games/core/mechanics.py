@@ -54,7 +54,7 @@ class Board:
             # Fill in with "off"
             self.bg = {key: [0, 0, 0] for key in led_map.keys()}
         self.strip.begin()
-        self.strip.show()
+        self.draw_background()
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
@@ -64,6 +64,12 @@ class Board:
         """Turn off all LEDs"""
         for i in range(LED_COUNT):
             self.strip.setPixelColorRGB(i, 0, 0, 0)
+        self.strip.show()
+
+    def draw_background(self):
+        """Draw the background"""
+        for loc in self.bg.keys():
+            self.set_pix(loc, self.bg[tuple(loc)])
         self.strip.show()
 
     def draw(self):
