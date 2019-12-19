@@ -23,3 +23,11 @@ class Sprite:
             self.location += DIR_DICT[direction]
         except KeyError:
             raise ValueError("Direction not understood!")
+
+
+class Board:
+    """Class for the board."""
+
+    def __init__(self, sprites=[]):
+        """Init for the board."""
+        self.sprites = sprites
