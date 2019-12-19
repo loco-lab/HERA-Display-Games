@@ -25,6 +25,17 @@ def get_gamepad():
 
 
 def get_next_movement(device):
+    """
+    Returns a human-readable output given *single* device press.
+
+    Returns
+    -------
+    tuple :
+        First element is a string giving the button that was pressed/released.
+        The second element is an int: 1 for press, 0 for release.
+        Note: if the thing that is released is any button on the DPAD, the first
+        element will be None.
+    """
     for event in device.read_loop():
         cat = event.type
 
@@ -32,27 +43,25 @@ def get_next_movement(device):
         if cat == ecodes.EV_ABS:
             if ecodes.ABS[event.code] == "ABS_Y":
                 if event.value == 0:
-                    return "u"
+                    return "u", 1
                 elif event.value == 255:
-                    return "d"
+                    return "d", 1
                 else:
-                    return None  # 'release'
+                    return None, 0  # 'release'
             else:
                 if event.value == 0:
-                    return "l"
+                    return "l", 1
                 elif event.value == 255:
-                    return "r"
+                    return "r", 1
                 else:
-                    return None  # 'release'
+                    return None, 0  # 'release'
 
         # EV_KEY seems like any other kind of key.
         elif cat == ecodes.EV_KEY:
-            if event.value == 0:
-                return None
-            else:
-                if type(ecodes.BTN[event.code]) == list:
-                    return "x"
-                return {
+            if type(ecodes.BTN[event.code]) == list:
+                return "x", event.value
+            return (
+                {
                     "BTN_BASE3": "select",
                     "BTN_BASE4": "start",
                     "BTN_TOP": "y",
@@ -60,7 +69,9 @@ def get_next_movement(device):
                     "BTN_THUMB": "a",
                     "BTN_BASE": "r-trigger",
                     "BTN_TOP2": "l-trigger",
-                }[ecodes.BTN[event.code]]
+                }[ecodes.BTN[event.code]],
+                event.value,
+            )
 
 
 def map_movement(device):
@@ -73,15 +84,16 @@ def map_movement(device):
     """
 
     while True:
-        val = get_next_movement(device)
-        # unmapped key press
-        if val is None:
+        val, state = get_next_movement(device)
+
+        # Releasing doesn't do anything yet.
+        if not state:
             continue
 
         while val in "ud":
-            newval = get_next_movement(device)
+            newval, newstate = get_next_movement(device)
 
-            if newval is None:
+            if not newstate:
                 continue
 
             if newval in "lr":
