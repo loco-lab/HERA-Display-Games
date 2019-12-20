@@ -1,3 +1,7 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+"""simple movement test"""
+
 import numpy as np
 from hera_display_games.core import mechanics
 import time
