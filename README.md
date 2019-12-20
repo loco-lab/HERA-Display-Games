@@ -4,7 +4,9 @@ Games to be played on the HERA display
 ## Installation
 
 It's not quite simply pip-installable, because you need to install `neopixel`,
-which is kinda tricky.
+which is kinda tricky. Other than that,
+
+`pip install [-e] .`
 
 ## How to run our test scripts
 The environment on the pi is really weird...
@@ -13,9 +15,9 @@ The environment on the pi is really weird...
 
 To run simple scripted movement:
 
-`sudo /home/hera-led/Hera_games_env/bin/python scripts/test_movement`
+`sudo test_movement`
 
-`sudo /home/hera-led/Hera_games_env/bin/python muck_around/test_controler_input`
+`sudo test_controler_input`
 
 ## How to write/add more games/simulations
 
