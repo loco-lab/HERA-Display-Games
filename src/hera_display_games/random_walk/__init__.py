@@ -8,8 +8,8 @@ import random
 
 
 @click.command()
-@click.option("-s", "--speed", type=float, help="Speed of sprite")
-@click.option("-n", "--nsprites", type=int, help="number of sprites")
+@click.option("-s", "--speed", type=float, default=1, help="Speed of sprite")
+@click.option("-n", "--nsprites", type=int, default=1, help="number of sprites")
 def main(speed, nsprites):
     if not 1 <= nsprites <= 6:
         raise ValueError("nsprites must be between 1 and 6")
