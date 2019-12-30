@@ -8,16 +8,41 @@ which is kinda tricky. Other than that,
 
 `pip install [-e] .`
 
-## How to run our test scripts
-The environment on the pi is really weird...
+### If you're on the Pi
+If you need to setup a raspberry pi with this, we recommend doing the following:
 
-`source ~/Hera_games_env/bin/activate`
+    $ pip install virtualenv
+    $ virtualenv ~/<ENVNAME>
+    $ source ~/<ENVNAME>/bin/activate
+    $ pip install [-e] .
+
+Then do the following (this will help later):
+
+    $ echo "export VENV=~/<ENVNAME>/bin" >> ~/.bashrc
+
+## How to run our test scripts
+
+### If you're on the Raspberry-Pi
+The environment on the pi is really weird.
+Anything that requires actually accessing the physical HERA board requires sudo, and
+unfortunately, there's no way to tell `sudo` that the `$PATH` has been modified to
+include the virtualenv, so you have to specify the full path.
+
+`source ~/<ENVNAME>/bin/activate`
 
 To run simple scripted movement:
 
-`sudo test_movement`
+`sudo -E $VENV/random_walk`
 
-`sudo test_controler_input`
+or
+
+`sudo -E $VENV/test_controler`
+
+### If you're not on the pi
+Just do `source ~/<ENVNAME>/bin/activate` and then you can easily call the script-name
+from any directory, eg::
+
+`$ random_walk -n 4`
 
 ## How to write/add more games/simulations
 
