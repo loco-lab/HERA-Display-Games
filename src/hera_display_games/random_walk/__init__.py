@@ -10,7 +10,14 @@ import random
 @click.command()
 @click.option("-s", "--speed", type=float, default=1, help="Speed of sprite")
 @click.option("-n", "--nsprites", type=int, default=1, help="number of sprites")
-def main(speed, nsprites):
+@click.option(
+    "-x",
+    "-X",
+    "--use-screen/--use-board",
+    default=False,
+    help="whether to use the physical HERA board",
+)
+def main(speed, nsprites, use_screen):
     if not 1 <= nsprites <= 6:
         raise ValueError("nsprites must be between 1 and 6")
 
@@ -21,7 +28,11 @@ def main(speed, nsprites):
     for i in range(nsprites):
         my_sprites.append(mechanics.Sprite([0, i]))
 
-    my_board = mechanics.Board(sprites=my_sprites)
+    if not use_screen:
+        my_board = mechanics.Board(sprites=my_sprites)
+    else:
+        my_board = mechanics.VirtualBoard(sprites=my_sprites)
+
     my_board.draw()
 
     directions = ["r", "l", "dl", "dr", "ur", "ul"]

@@ -1,5 +1,21 @@
-import neopixel
+try:
+    import neopixel
+
+    HAVE_NEOPIXEL = True
+except ImportError:
+    HAVE_NEOPIXEL = False
+
+import math
 import time
+from abc import ABC, abstractmethod
+
+try:
+    import pygame
+
+    HAVE_PYGAME = True
+except ImportError:
+    HAVE_PYGAME = False
+
 from . import map_dict
 
 led_map = map_dict.led_map
@@ -11,7 +27,6 @@ LED_DMA = 10  # DMA channel to use for generating signal (try 10)
 LED_BRIGHTNESS = 55  # Set to 0 for darkest and 255 for brightest
 LED_INVERT = False  # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
-
 
 DIR_DICT = {
     "ul": [0, 1],
@@ -46,25 +61,43 @@ class Sprite:
         except KeyError:
             raise ValueError("Direction not understood!")
 
+    def goto(self, loc):
+        """Move pixel to given loc. If loc is integer, go to that pixel *number*.
+        If tuple, describes an x,y location."""
+        if type(loc) == int:
+            self.location[0] = map_dict.reverse_led_map[loc][0]
+            self.location[1] = map_dict.reverse_led_map[loc][1]
+        else:
+            if len(loc) != 2:
+                raise ValueError("loc should be a 2-tuple!")
+            self.location = loc
 
-class Board:
-    """Class for the board."""
 
-    def __init__(self, sprites=[], bg=None):
+class _BoardBase(ABC):
+    """Class for a generic hexagonal board. Can be used either for a virtual board
+    or a hardware board with LEDS."""
+
+    def __init__(self, sprites=None, bg=None):
         """Init for the board."""
-        self.sprites = sprites
+
+        self.sprites = sprites or []
         self.last_locs = [sp.location.copy() for sp in self.sprites]
-        self.strip = neopixel.Adafruit_NeoPixel(
-            LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL
-        )
+
+        self.strip = self.make_strip()
+        self.strip.begin()
+
         if bg is not None:
             self.bg = bg
         else:
             # Fill in with "off"
             self.bg = {key: [0, 0, 0] for key in led_map.keys()}
-        self.strip.begin()
         self.clear()
         self.draw_background()
+
+    @abstractmethod
+    def make_strip(self):
+        """Initialize a Strip object that deals with the actual pixel colours."""
+        pass
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
@@ -109,3 +142,115 @@ class Board:
                 self.set_pix(sp.location, sp.color)
         self.last_locs = [sp.location.copy() for sp in self.sprites]
         self.strip.show()
+
+
+class PyGameStrip:
+    """Virtual LED strip made with pygame"""
+
+    antenna_size = 20
+    n_ants_per_side = 12  # including the middle dead strip
+    y_up = math.cos(math.pi / 3) * antenna_size
+    x_right = math.sin(math.pi / 3) * antenna_size
+
+    max_x = max(x for x, y in map_dict.led_map.keys()) + 1
+    max_y = max(y for x, y in map_dict.led_map.keys()) + 1
+
+    zeroth_column_size = max(y for x, y in map_dict.led_map.keys() if x == 0)
+
+    def begin(self):
+        pygame.init()
+
+        # Make screen size based on hexagon size.
+        self.screen = pygame.display.set_mode(
+            (
+                int(self.x_right * 2 * self.max_x + self.antenna_size),
+                int((self.antenna_size + self.y_up) * self.max_y + self.antenna_size + self.y_up),
+            )
+        )
+
+        # Make full background black
+        self.screen.fill((0, 0, 0))
+
+        # A single corner from each "antenna" (bottom-left)
+        self.grid_corners = self._make_grid()
+
+        # Set pixel background colors to some kind of grey.
+        for pixel, corner in self.grid_corners.items():
+            pygame.draw.polygon(
+                self.screen, [150, 150, 150], self._get_corners_from_left_corner(corner),
+            )
+
+        # Set pixel borders to darker grey.
+        self.antenna_polygons = {}
+        for pixel, corner in self.grid_corners.items():
+            self.antenna_polygons[pixel] = pygame.draw.polygon(
+                self.screen, [200, 200, 200], self._get_corners_from_left_corner(corner), 3
+            )
+
+        pygame.display.flip()
+
+    def _get_corners_from_left_corner(self, left_corner):
+        """Left corner is the (x,y) tuple specifying the left corner coord in pixels."""
+        x, y = left_corner
+        return [
+            left_corner,
+            (x + self.x_right, y + self.y_up),
+            (x + 2 * self.x_right, y),
+            (x + 2 * self.x_right, y - self.antenna_size),
+            (x + self.x_right, y - self.antenna_size - self.y_up),
+            (x, y - self.antenna_size),
+        ]
+
+    def _make_grid(self):
+        positions = {}
+        for pixel, coord in map_dict.reverse_led_map.items():
+            positions[pixel] = (
+                self.antenna_size / 2
+                + self.zeroth_column_size * self.x_right
+                + coord[0] * 2 * self.x_right
+                - coord[1] * self.x_right,
+                self.screen.get_size()[1]
+                - self.antenna_size / 2
+                - self.y_up
+                - coord[1] * (self.y_up + self.antenna_size),
+            )
+
+        return positions
+
+    def setPixelColorRGB(self, pix_num, *rgb):
+        self.antenna_polygons[pix_num] = pygame.draw.polygon(
+            self.screen, rgb, self._get_corners_from_left_corner(self.grid_corners[pix_num]), 3
+        )
+
+    def show(self):
+        pygame.display.flip()
+
+
+class Board(_BoardBase):
+    """The standard hardware board"""
+
+    def __init__(self, *args, **kwargs):
+        if not HAVE_NEOPIXEL:
+            raise ImportError(
+                "You need to have the neopixel package installed to use the default board! You "
+                "can still use the VirtualBoard."
+            )
+        super().__init__(*args, **kwargs)
+
+    def make_strip(self):
+        return neopixel.Adafruit_NeoPixel(
+            LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL
+        )
+
+
+class VirtualBoard(_BoardBase):
+    def __init__(self, *args, **kwargs):
+        if not HAVE_PYGAME:
+            raise ImportError(
+                "You need to have the pygame package installed to use the virtual board! You "
+                "can still use the default Board."
+            )
+        super().__init__(*args, **kwargs)
+
+    def make_strip(self):
+        return PyGameStrip()
