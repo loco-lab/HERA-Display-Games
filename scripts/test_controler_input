@@ -18,8 +18,6 @@ my_sprite = mechanics.Sprite(np.array([0, 0]), color=[3, 137, 255])
 my_board = mechanics.Board(sprites=[my_sprite])
 my_board.draw()
 
-device = keymapper.get_gamepad()
-loop = asyncio.get_event_loop()
 # task1 = loop.create_task(recolor(my_sprite))
 # task2 = loop.create_task(keymapper.map_movement(device))
 
