@@ -9,7 +9,12 @@ import math
 import time
 from abc import ABC, abstractmethod
 
-import pygame
+try:
+    import pygame
+
+    HAVE_PYGAME = True
+except ImportError:
+    HAVE_PYGAME = False
 
 from . import map_dict
 
@@ -209,5 +214,12 @@ class Board(_BoardBase):
 
 
 class VirtualBoard(_BoardBase):
+    def __init__(self, *args, **kwargs):
+        if not HAVE_PYGAME:
+            raise ImportError(
+                "You need to have the pygame package installed to use the virtual board! You "
+                "can still use the default Board."
+            )
+
     def make_strip(self):
         return PyGameStrip()
