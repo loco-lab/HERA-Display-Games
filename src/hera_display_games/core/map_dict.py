@@ -352,3 +352,5 @@ led_map = {
     (20, 20): 210,
     (21, 20): "dead",
 }
+
+reverse_led_map = {val: key for key, val in led_map.items() if val != "dead"}
