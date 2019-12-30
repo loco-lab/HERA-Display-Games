@@ -28,15 +28,6 @@ LED_BRIGHTNESS = 55  # Set to 0 for darkest and 255 for brightest
 LED_INVERT = False  # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
-DIR_DICT = {
-    "ul": [0, 1],
-    "ur": [1, 1],
-    "r": [1, 0],
-    "dr": [0, -1],
-    "dl": [-1, -1],
-    "l": [-1, 0],
-}
-
 
 class OutOfBoundsError(Exception):
     pass
@@ -44,31 +35,6 @@ class OutOfBoundsError(Exception):
 
 class SpriteCollision(Exception):
     pass
-
-
-class Sprite:
-    """Class for sprites."""
-
-    def __init__(self, location=[0, 0], color=[0, 255, 0]):
-        """Init for sprites."""
-        self.location = location
-        self.color = color
-        self.moved = False
-
-    def move(self, movement):
-        try:
-            self.location[0] += DIR_DICT[movement][0]
-            self.location[1] += DIR_DICT[movement][1]
-        except TypeError:
-            if type(movement) == int:
-                self.location[0] = map_dict.reverse_led_map[movement][0]
-                self.location[1] = map_dict.reverse_led_map[movement][1]
-            else:
-                if len(movement) != 2:
-                    raise ValueError("movement should be a 2-tuple!")
-                self.location = movement.copy()
-        except KeyError:
-            raise ValueError("That was a bad string for movement")
 
 
 class _BoardBase(ABC):
@@ -121,16 +87,20 @@ class _BoardBase(ABC):
         sprite.move(movement)
 
         # Check against other sprites.
-        for other in self.sprites:
-            if sprite is not other:
-                if sprite.location == other.location:
-                    # This is where you'd add logic like dying/damage etc.
-                    sprite.move(prev_loc)
-
+        done = False
+        while not done:
+            done = True
+            for other in self.sprites:
+                if sprite is not other and sprite.location == other.location:
+                    done = sprite.encounter(other, prev_loc,)
+            self.kill_sprites()
         # Check against the borders.
         # also do logic like making it flash and stuff.
         if tuple(sprite.location) not in map_dict.led_map:
             sprite.move(prev_loc)
+
+    def kill_sprites(self):
+        self.sprites = [sprite for sprite in self.sprites if not sprite.dead]
 
     def draw(self):
         """Draw the board and update the display"""
