@@ -20,6 +20,15 @@ Then do the following (this will help later):
 
     $ echo "export VENV=~/<ENVNAME>/bin" >> ~/.bashrc
 
+### If you're not on the Pi
+Then you won't have access to the actual HERA board, and you'll want to run the games
+on your own screen using pygame. Then install like this:
+
+    $ pip install -e .[screen]
+
+Most scripts come with a command-line option `--use-screen` that will use the screen
+simulator rather than the actual board.
+
 ## How to run our test scripts
 
 ### If you're on the Raspberry-Pi
