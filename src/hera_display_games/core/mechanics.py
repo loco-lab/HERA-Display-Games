@@ -1,6 +1,10 @@
 import neopixel
 import time
 from . import map_dict
+from abc import ABC, abstractmethod
+import pygame
+import math
+import numpy as np
 
 led_map = map_dict.led_map
 # LED strip configuration:
@@ -47,24 +51,30 @@ class Sprite:
             raise ValueError("Direction not understood!")
 
 
-class Board:
-    """Class for the board."""
+class _BoardBase(ABC):
+    """Class for a generic hexagonal board. Can be used either for a virtual board
+    or a hardware board with LEDS."""
 
     def __init__(self, sprites=[], bg=None):
         """Init for the board."""
         self.sprites = sprites
         self.last_locs = [sp.location.copy() for sp in self.sprites]
-        self.strip = neopixel.Adafruit_NeoPixel(
-            LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL
-        )
+
+        self.strip = self.make_strip()
+        self.strip.begin()
+
         if bg is not None:
             self.bg = bg
         else:
             # Fill in with "off"
             self.bg = {key: [0, 0, 0] for key in led_map.keys()}
-        self.strip.begin()
         self.clear()
         self.draw_background()
+
+    @abstractmethod
+    def make_strip(self):
+        """Initialize a Strip object that deals with the actual pixel colours."""
+        pass
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
@@ -109,3 +119,70 @@ class Board:
                 self.set_pix(sp.location, sp.color)
         self.last_locs = [sp.location.copy() for sp in self.sprites]
         self.strip.show()
+
+
+class PyGameStrip:
+    """Virtual LED strip made with pygame"""
+
+    antenna_size = 10
+    n_ants_per_side = 12  # including the middle dead strip
+    y_up = math.sin(math.pi / 3) * antenna_size
+    x_right = math.cos(math.pi / 3) * antenna_size
+
+    def begin(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((400, 400))
+
+        grid_corners = self._make_grid()
+
+        self.antenna_polygons = []
+        for corner in grid_corners:
+            self.antenna_polygons.append(
+                pygame.draw.polygon(
+                    self.screen, [0, 0, 0], self._get_corners_from_left_corner(corner)
+                )
+            )
+
+    def _get_corners_from_left_corner(self, left_corner):
+        """Left corner is the (x,y) tuple specifying the left corner coord in pixels."""
+        x, y = left_corner
+        return [
+            left_corner,
+            (x + self.antenna_size, y),
+            (x + self.antenna_size + self.x_right, y + self.y_up),
+            (x + self.antenna_size, y + 2 * self.y_up),
+            (x, y + 2 * self.y_up),
+            (x - self.x_right, y + self.y_up),
+        ]
+
+    def _make_grid(self):
+        positions = []
+        for coord in map_dict.led_map:
+            positions.append(
+                (
+                    coord[0] * (self.antenna_size + 2 * self.x_right)
+                    - coord[1] * (self.antenna_size + self.x_right),
+                    coord[1] * self.y_up,
+                )
+            )
+        return positions
+
+    def setPixelColorRGB(self, pix_num, *rgb):
+        pass
+
+    def show(self):
+        pass
+
+
+class Board(_BoardBase):
+    """The standard hardware board"""
+
+    def make_strip(self):
+        return neopixel.Adafruit_NeoPixel(
+            LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL
+        )
+
+
+class VirtualBoard(_BoardBase):
+    def make_strip(self):
+        pass
