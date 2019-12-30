@@ -26,7 +26,12 @@ def main(speed, nsprites, use_screen):
 
     my_sprites = []
     for i in range(nsprites):
-        my_sprites.append(mechanics.Sprite([0, i]))
+        my_sprites.append(
+            mechanics.Sprite(
+                [0, i],
+                color=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)),
+            )
+        )
 
     if not use_screen:
         my_board = mechanics.Board(sprites=my_sprites)
@@ -39,7 +44,7 @@ def main(speed, nsprites, use_screen):
 
     while True:
         for sprite in my_sprites:
-            sprite.move(random.choice(directions))
+            my_board.move_sprite(sprite, random.choice(directions))
 
         my_board.draw()
         time.sleep(1.0 / speed)

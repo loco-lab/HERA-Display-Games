@@ -53,24 +53,22 @@ class Sprite:
         """Init for sprites."""
         self.location = location
         self.color = color
+        self.moved = False
 
-    def move(self, direction):
+    def move(self, movement):
         try:
-            self.location[0] += DIR_DICT[direction][0]
-            self.location[1] += DIR_DICT[direction][1]
+            self.location[0] += DIR_DICT[movement][0]
+            self.location[1] += DIR_DICT[movement][1]
+        except TypeError:
+            if type(movement) == int:
+                self.location[0] = map_dict.reverse_led_map[movement][0]
+                self.location[1] = map_dict.reverse_led_map[movement][1]
+            else:
+                if len(movement) != 2:
+                    raise ValueError("movement should be a 2-tuple!")
+                self.location = movement.copy()
         except KeyError:
-            raise ValueError("Direction not understood!")
-
-    def goto(self, loc):
-        """Move pixel to given loc. If loc is integer, go to that pixel *number*.
-        If tuple, describes an x,y location."""
-        if type(loc) == int:
-            self.location[0] = map_dict.reverse_led_map[loc][0]
-            self.location[1] = map_dict.reverse_led_map[loc][1]
-        else:
-            if len(loc) != 2:
-                raise ValueError("loc should be a 2-tuple!")
-            self.location = loc
+            raise ValueError("That was a bad string for movement")
 
 
 class _BoardBase(ABC):
@@ -82,6 +80,8 @@ class _BoardBase(ABC):
 
         self.sprites = sprites or []
         self.last_locs = [sp.location.copy() for sp in self.sprites]
+
+        self.moved_sprites = []
 
         self.strip = self.make_strip()
         self.strip.begin()
@@ -101,11 +101,8 @@ class _BoardBase(ABC):
 
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
-        try:
-            if led_map[tuple(loc)] != "dead":
-                self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
-        except KeyError:
-            raise OutOfBoundsError()
+        if led_map[tuple(loc)] != "dead":
+            self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
 
     def clear(self):
         """Turn off all LEDs"""
@@ -119,27 +116,31 @@ class _BoardBase(ABC):
             self.set_pix(loc, self.bg[loc])
         self.strip.show()
 
+    def move_sprite(self, sprite, movement):
+        prev_loc = sprite.location.copy()
+        sprite.move(movement)
+
+        # Check against other sprites.
+        for other in self.sprites:
+            if sprite is not other:
+                if sprite.location == other.location:
+                    # This is where you'd add logic like dying/damage etc.
+                    sprite.move(prev_loc)
+
+        # Check against the borders.
+        # also do logic like making it flash and stuff.
+        if tuple(sprite.location) not in map_dict.led_map:
+            sprite.move(prev_loc)
+
     def draw(self):
         """Draw the board and update the display"""
         # Update previous position of sprite with the background
         for loc in self.last_locs:
             self.set_pix(loc, self.bg[tuple(loc)])
+
         for i, sp in enumerate(self.sprites):
-            # If the current sprite tries to move to the location of another
-            # sprite, don't let it
-            for sp_other in self.sprites[:i]:
-                if sp.location == sp_other.location:
-                    sp.location = self.last_locs[i]
-            # Also don't let the sprite go out of the bounds of the board
-            try:
-                self.set_pix(sp.location, sp.color)
-            except OutOfBoundsError:
-                sp.location = self.last_locs[i]
-                # Flash red if it can't move any further
-                self.set_pix(sp.location, [155, 0, 0])
-                self.strip.show()
-                time.sleep(0.5)
-                self.set_pix(sp.location, sp.color)
+            self.set_pix(sp.location, sp.color)
+
         self.last_locs = [sp.location.copy() for sp in self.sprites]
         self.strip.show()
 

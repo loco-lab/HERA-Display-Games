@@ -40,7 +40,7 @@ def get_next_movement(device):
     for event in device.read_loop():
         cat = event.type
 
-        # EV_ABS seems like its the type for direction pressing
+        # EV_ABS seems like its the type for movement pressing
         if cat == ecodes.EV_ABS:
             if ecodes.ABS[event.code] == "ABS_Y":
                 if event.value == 0:
