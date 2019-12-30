@@ -147,50 +147,79 @@ class _BoardBase(ABC):
 class PyGameStrip:
     """Virtual LED strip made with pygame"""
 
-    antenna_size = 10
+    antenna_size = 20
     n_ants_per_side = 12  # including the middle dead strip
     y_up = math.cos(math.pi / 3) * antenna_size
     x_right = math.sin(math.pi / 3) * antenna_size
 
+    max_x = max(x for x, y in map_dict.led_map.keys()) + 1
+    max_y = max(y for x, y in map_dict.led_map.keys()) + 1
+
+    zeroth_column_size = max(y for x, y in map_dict.led_map.keys() if x == 0)
+
     def begin(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((800, 800))
 
+        # Make screen size based on hexagon size.
+        self.screen = pygame.display.set_mode(
+            (
+                int(self.x_right * 2 * self.max_x + self.antenna_size),
+                int((self.antenna_size + self.y_up) * self.max_y + self.antenna_size + self.y_up),
+            )
+        )
+
+        # Make full background black
+        self.screen.fill((0, 0, 0))
+
+        # A single corner from each "antenna" (bottom-left)
         self.grid_corners = self._make_grid()
 
-        print(self.grid_corners)
+        # Set pixel background colors to some kind of grey.
+        for pixel, corner in self.grid_corners.items():
+            pygame.draw.polygon(
+                self.screen, [150, 150, 150], self._get_corners_from_left_corner(corner),
+            )
+
+        # Set pixel borders to darker grey.
         self.antenna_polygons = {}
         for pixel, corner in self.grid_corners.items():
             self.antenna_polygons[pixel] = pygame.draw.polygon(
-                self.screen, [220, 220, 220], self._get_corners_from_left_corner(corner)
+                self.screen, [200, 200, 200], self._get_corners_from_left_corner(corner), 3
             )
+
+        pygame.display.flip()
 
     def _get_corners_from_left_corner(self, left_corner):
         """Left corner is the (x,y) tuple specifying the left corner coord in pixels."""
         x, y = left_corner
         return [
             left_corner,
-            (x + self.x_right, y - self.y_up),
+            (x + self.x_right, y + self.y_up),
             (x + 2 * self.x_right, y),
-            (x + 2 * self.x_right, y + self.antenna_size),
-            (x + self.x_right, y + self.antenna_size + self.y_up),
-            (x, y + self.antenna_size),
+            (x + 2 * self.x_right, y - self.antenna_size),
+            (x + self.x_right, y - self.antenna_size - self.y_up),
+            (x, y - self.antenna_size),
         ]
 
     def _make_grid(self):
         positions = {}
         for pixel, coord in map_dict.reverse_led_map.items():
             positions[pixel] = (
-                coord[0] * (self.antenna_size + 2 * self.x_right)
-                - coord[1] * (self.antenna_size + self.x_right),
-                coord[1] * self.y_up,
+                self.antenna_size / 2
+                + self.zeroth_column_size * self.x_right
+                + coord[0] * 2 * self.x_right
+                - coord[1] * self.x_right,
+                self.screen.get_size()[1]
+                - self.antenna_size / 2
+                - self.y_up
+                - coord[1] * (self.y_up + self.antenna_size),
             )
 
         return positions
 
     def setPixelColorRGB(self, pix_num, *rgb):
         self.antenna_polygons[pix_num] = pygame.draw.polygon(
-            self.screen, rgb, self._get_corners_from_left_corner(self.grid_corners[pix_num])
+            self.screen, rgb, self._get_corners_from_left_corner(self.grid_corners[pix_num]), 3
         )
 
     def show(self):
