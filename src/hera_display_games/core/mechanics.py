@@ -206,6 +206,7 @@ class Board(_BoardBase):
                 "You need to have the neopixel package installed to use the default board! You "
                 "can still use the VirtualBoard."
             )
+        super().__init__(*args, **kwargs)
 
     def make_strip(self):
         return neopixel.Adafruit_NeoPixel(
@@ -220,6 +221,7 @@ class VirtualBoard(_BoardBase):
                 "You need to have the pygame package installed to use the virtual board! You "
                 "can still use the default Board."
             )
+        super().__init__(*args, **kwargs)
 
     def make_strip(self):
         return PyGameStrip()
