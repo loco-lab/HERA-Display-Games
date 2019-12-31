@@ -26,6 +26,8 @@ async def move_sprite(device, sprite, board):
             board.draw()
 
 
+# event loop and other code adapted from
+# https://github.com/AlexElvers/pygame-with-asyncio
 def pygame_event_loop(loop, event_queue):
     import pygame
 
