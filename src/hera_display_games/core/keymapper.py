@@ -64,8 +64,8 @@ class GamePad(EvDevDevice):
     def is_this_device(self, device):
         return "gamepad" in device.name
 
-    def get_next_movement(self):
-        for event in self.device.read_loop():
+    async def get_next_movement(self):
+        async for event in self.device.async_read_loop():
             cat = event.type
 
             # EV_ABS seems like its the type for direction pressing
@@ -104,16 +104,21 @@ class GamePad(EvDevDevice):
 
 
 class KeyBoardArrows(Device):
-    def __init__(self, init=False):
+    def __init__(self, init=False, queue=None):
         if not HAVE_PYGAME:
             raise ImportError("YOu can't use keyboard without pygame")
         if init:
             pygame.display.init()
             pygame.display.set_mode((300, 300))
+        if queue is not None:
+            self.set_event_queue(queue)
 
-    def get_next_movement(self):
+    def set_event_queue(self, queue):
+        self.event_queue = queue
+
+    async def get_next_movement(self):
         while True:
-            event = pygame.event.wait()
+            event = await self.event_queue.get()
             if event.type == pygame.QUIT:
                 pygame.quit()
 
@@ -150,14 +155,14 @@ async def map_movement(device):
     """
 
     while True:
-        val, state = device.get_next_movement()
+        val, state = await device.get_next_movement()
 
         # Releasing doesn't do anything yet.
         if not state:
             continue
 
         while val in "ud":
-            newval, newstate = device.get_next_movement()
+            newval, newstate = await device.get_next_movement()
 
             if not newstate:
                 continue

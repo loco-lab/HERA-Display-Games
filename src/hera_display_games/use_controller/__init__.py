@@ -5,13 +5,38 @@
 import numpy as np
 import asyncio
 from hera_display_games.core import mechanics, keymapper
-import time
 import click
 
 
 async def recolor(sprite):
-    time.sleep(10)
-    return np.random.randint(0, 255, size=3).tolist()
+    while True:
+        await asyncio.sleep(5)
+        sprite.color = np.random.randint(0, 255, size=3).tolist()
+
+
+async def move_sprite(device, sprite):
+    while True:
+        response = await keymapper.map_movement(device)
+        if response in ["ul", "ur", "dl", "dr", "r", "l"]:
+            sprite.move(response)
+        elif response in ["r-trigger", "l-trigger"]:
+            sprite.color = np.random.randint(0, 255, size=3).astype(int).tolist()
+
+
+async def update_board(board, speed=10.0):
+    while True:
+        await asyncio.sleep(1.0 / speed)
+        board.draw()
+
+
+# event loop and other code adapted from
+# https://github.com/AlexElvers/pygame-with-asyncio
+def pygame_event_loop(loop, event_queue):
+    import pygame
+
+    while True:
+        event = pygame.event.wait()
+        asyncio.run_coroutine_threadsafe(event_queue.put(event), loop=loop)
 
 
 @click.command()
@@ -25,6 +50,8 @@ async def recolor(sprite):
 @click.option("--input", default="gamepad", type=click.Choice(["gamepad", "keyboard"]))
 def main(use_screen, input):
     my_sprite = mechanics.Sprite(np.array([0, 0]), color=[3, 137, 255])
+    loop = asyncio.get_event_loop()
+    event_queue = asyncio.Queue()
 
     if not use_screen:
         my_board = mechanics.Board(sprites=[my_sprite])
@@ -35,19 +62,22 @@ def main(use_screen, input):
     if input == "gamepad":
         device = keymapper.GamePad()
     elif input == "keyboard":
-        device = keymapper.KeyBoardArrows()
+        device = keymapper.KeyBoardArrows(queue=event_queue)
+        pygame_task = loop.run_in_executor(None, pygame_event_loop, loop, event_queue)
     else:
         raise ValueError("incorrect input")
 
-    loop = asyncio.get_event_loop()
-    # task1 = loop.create_task(recolor(my_sprite))
-    # task2 = loop.create_task(keymapper.map_movement(device))
-
-    while True:
-        response = loop.run_until_complete(keymapper.map_movement(device))
-        if response in ["ul", "ur", "dl", "dr", "r", "l"]:
-            my_sprite.move(response)
-            my_board.draw()
-        elif response in ["r-trigger", "l-trigger"]:
-            my_sprite.color = np.random.randint(0, 255, size=3).astype(int).tolist()
-            my_board.draw()
+    color_task = asyncio.ensure_future(recolor(my_sprite))
+    move_task = asyncio.ensure_future(move_sprite(device, my_sprite))
+    board_task = asyncio.ensure_future(update_board(my_board))
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if input == "keyboard":
+            pygame_task.cancel()
+        color_task.cancel()
+        move_task.cancel()
+        board_task.cancel()
+        loop.stop()
