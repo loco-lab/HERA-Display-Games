@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENV_NAME: linting
-      WITH_SUDO: yes
+      WITH_SUDO: True
       PYTHON: 3.8
     steps:
      - uses: actions/checkout@master
