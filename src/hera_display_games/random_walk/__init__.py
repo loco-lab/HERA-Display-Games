@@ -2,9 +2,30 @@
 # -*- coding: utf-8 -*-
 """A simple simulation of a random walk"""
 import click
-from hera_display_games.core import mechanics, sprites
+from hera_display_games.core import mechanics, sprites, keymapper
+import asyncio
 import time
 import random
+
+
+async def update_board(board, speed=10.0):
+    directions = ["r", "l", "dl", "dr", "ur", "ul"]
+    while True:
+        for sprite in board.sprites:
+            board.move_sprite(sprite, random.choice(directions))
+
+        board.draw()
+        await asyncio.sleep(1.0 / speed)
+
+
+# event loop and other code adapted from
+# https://github.com/AlexElvers/pygame-with-asyncio
+def pygame_event_loop(loop, event_queue):
+    import pygame
+
+    while True:
+        event = pygame.event.wait()
+        asyncio.run_coroutine_threadsafe(event_queue.put(event), loop=loop)
 
 
 @click.command()
@@ -40,6 +61,8 @@ def main(speed, nsprites, eat, use_screen):
             )
         )
 
+    loop = asyncio.get_event_loop()
+
     if not use_screen:
         my_board = mechanics.Board(sprites=my_sprites)
     else:
@@ -47,11 +70,11 @@ def main(speed, nsprites, eat, use_screen):
 
     my_board.draw()
 
-    directions = ["r", "l", "dl", "dr", "ur", "ul"]
-
-    while True:
-        for sprite in my_board.sprites:
-            my_board.move_sprite(sprite, random.choice(directions))
-
-        my_board.draw()
-        time.sleep(1.0 / speed)
+    board_task = asyncio.ensure_future(update_board(my_board))
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        board_task.cancel()
+        loop.stop()
