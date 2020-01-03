@@ -1,0 +1,11 @@
+name: linting
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - flake8
+  - flake8-docstrings
+  - pip
+  - pip:
+      - flake8-pytest
+      - flake8-black
