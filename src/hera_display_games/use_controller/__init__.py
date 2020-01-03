@@ -8,22 +8,25 @@ from hera_display_games.core import mechanics, keymapper
 import click
 
 
-async def recolor(sprite, board):
+async def recolor(sprite):
     while True:
         await asyncio.sleep(5)
         sprite.color = np.random.randint(0, 255, size=3).tolist()
-        board.draw()
 
 
-async def move_sprite(device, sprite, board):
+async def move_sprite(device, sprite):
     while True:
         response = await keymapper.map_movement(device)
         if response in ["ul", "ur", "dl", "dr", "r", "l"]:
             sprite.move(response)
-            board.draw()
         elif response in ["r-trigger", "l-trigger"]:
             sprite.color = np.random.randint(0, 255, size=3).astype(int).tolist()
-            board.draw()
+
+
+async def update_board(board, speed=10.0):
+    while True:
+        await asyncio.sleep(1.0 / speed)
+        board.draw()
 
 
 # event loop and other code adapted from
@@ -64,11 +67,9 @@ def main(use_screen, input):
     else:
         raise ValueError("incorrect input")
 
-    color_task = asyncio.ensure_future(recolor(my_sprite, my_board))
-    move_tast = asyncio.ensure_future(move_sprite(device, my_sprite, my_board))
-
-    # task1 = loop.create_task(recolor(my_sprite))
-    # task2 = loop.create_task(keymapper.map_movement(device))
+    color_task = asyncio.ensure_future(recolor(my_sprite))
+    move_task = asyncio.ensure_future(move_sprite(device, my_sprite))
+    board_task = asyncio.ensure_future(update_board(my_board))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
@@ -77,5 +78,6 @@ def main(use_screen, input):
         if input == "keyboard":
             pygame_task.cancel()
         color_task.cancel()
-        move_tast.cancel()
+        move_task.cancel()
+        board_task.cancel()
         loop.stop()
