@@ -70,7 +70,7 @@ def main(speed, nsprites, eat, use_screen):
 
     my_board.draw()
 
-    board_task = asyncio.ensure_future(update_board(my_board))
+    board_task = asyncio.ensure_future(update_board(my_board, speed=speed))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
