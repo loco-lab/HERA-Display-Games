@@ -6,7 +6,6 @@ except ImportError:
     HAVE_NEOPIXEL = False
 
 import math
-import time
 from abc import ABC, abstractmethod
 
 try:
@@ -17,24 +16,7 @@ except ImportError:
     HAVE_PYGAME = False
 
 from . import map_dict
-
-led_map = map_dict.led_map
-# LED strip configuration:
-LED_COUNT = 320  # Number of LED pixels.
-LED_PIN = 18  # GPIO pin connected to the pixels (18 uses PWM!).
-LED_FREQ_HZ = 800000  # LED signal frequency in hertz (usually 800khz)
-LED_DMA = 10  # DMA channel to use for generating signal (try 10)
-LED_BRIGHTNESS = 55  # Set to 0 for darkest and 255 for brightest
-LED_INVERT = False  # True to invert the signal (when using NPN transistor level shift)
-LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
-
-
-class OutOfBoundsError(Exception):
-    pass
-
-
-class SpriteCollision(Exception):
-    pass
+from .sprites import OutOfBoundsError
 
 
 class _BoardBase(ABC):
@@ -56,7 +38,7 @@ class _BoardBase(ABC):
             self.bg = bg
         else:
             # Fill in with "off"
-            self.bg = {key: [0, 0, 0] for key in led_map.keys()}
+            self.bg = {key: [0, 0, 0] for key in map_dict.led_map.keys()}
         self.clear()
         self.draw_background()
 
@@ -65,14 +47,19 @@ class _BoardBase(ABC):
         """Initialize a Strip object that deals with the actual pixel colours."""
         pass
 
+    @abstractmethod
+    @property
+    def npixels(self):
+        pass
+
     def set_pix(self, loc, rgb):
         """Set pixel color for location and rgb"""
-        if led_map[tuple(loc)] != "dead":
-            self.strip.setPixelColorRGB(led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
+        if map_dict.led_map[tuple(loc)] != "dead":
+            self.strip.setPixelColorRGB(map_dict.led_map[tuple(loc)], rgb[0], rgb[1], rgb[2])
 
     def clear(self):
         """Turn off all LEDs"""
-        for i in range(LED_COUNT):
+        for i in range(self.npixels):
             self.strip.setPixelColorRGB(i, 0, 0, 0)
         self.strip.show()
 
@@ -84,7 +71,10 @@ class _BoardBase(ABC):
 
     def move_sprite(self, sprite, movement):
         prev_loc = sprite.location.copy()
-        sprite.move(movement)
+        try:
+            sprite.move(movement)
+        except OutOfBoundsError:
+            self.sprite_hit_boundary(sprite, prev_loc)
 
         # Check against other sprites.
         done = False
@@ -98,6 +88,10 @@ class _BoardBase(ABC):
         # also do logic like making it flash and stuff.
         if tuple(sprite.location) not in map_dict.led_map:
             sprite.move(prev_loc)
+
+    def sprite_hit_boundary(self, sprite, prev_loc):
+        """Decide on what to do if a sprite hits a boundary."""
+        sprite.hit_boundary(prev_loc)
 
     def kill_sprites(self):
         self.sprites = [sprite for sprite in self.sprites if not sprite.dead]
@@ -200,6 +194,15 @@ class PyGameStrip:
 class Board(_BoardBase):
     """The standard hardware board"""
 
+    # LED strip configuration:
+    LED_COUNT = 320  # Number of LED pixels.
+    LED_PIN = 18  # GPIO pin connected to the pixels (18 uses PWM!).
+    LED_FREQ_HZ = 800000  # LED signal frequency in hertz (usually 800khz)
+    LED_DMA = 10  # DMA channel to use for generating signal (try 10)
+    LED_BRIGHTNESS = 55  # Set to 0 for darkest and 255 for brightest
+    LED_INVERT = False  # True to invert the signal (when using NPN transistor level shift)
+    LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
+
     def __init__(self, *args, **kwargs):
         if not HAVE_NEOPIXEL:
             raise ImportError(
@@ -210,8 +213,18 @@ class Board(_BoardBase):
 
     def make_strip(self):
         return neopixel.Adafruit_NeoPixel(
-            LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL
+            self.LED_COUNT,
+            self.LED_PIN,
+            self.LED_FREQ_HZ,
+            self.LED_DMA,
+            self.LED_INVERT,
+            self.LED_BRIGHTNESS,
+            self.LED_CHANNEL,
         )
+
+    @property
+    def npixels(self):
+        return self.LED_COUNT
 
 
 class VirtualBoard(_BoardBase):
@@ -225,3 +238,7 @@ class VirtualBoard(_BoardBase):
 
     def make_strip(self):
         return PyGameStrip()
+
+    @property
+    def npixels(self):
+        return len(self.strip.grid_corners)

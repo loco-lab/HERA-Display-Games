@@ -4,7 +4,7 @@
 
 import numpy as np
 import asyncio
-from hera_display_games.core import mechanics, keymapper
+from hera_display_games.core import board, keymapper
 import click
 
 
@@ -49,14 +49,14 @@ def pygame_event_loop(loop, event_queue):
 )
 @click.option("--input", default="gamepad", type=click.Choice(["gamepad", "keyboard"]))
 def main(use_screen, input):
-    my_sprite = mechanics.Sprite(np.array([0, 0]), color=[3, 137, 255])
+    my_sprite = board.Sprite(np.array([0, 0]), color=[3, 137, 255])
     loop = asyncio.get_event_loop()
     event_queue = asyncio.Queue()
 
     if not use_screen:
-        my_board = mechanics.Board(sprites=[my_sprite])
+        my_board = board.Board(sprites=[my_sprite])
     else:
-        my_board = mechanics.VirtualBoard(sprites=[my_sprite])
+        my_board = board.VirtualBoard(sprites=[my_sprite])
     my_board.draw()
 
     if input == "gamepad":

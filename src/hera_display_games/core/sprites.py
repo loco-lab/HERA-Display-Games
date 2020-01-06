@@ -11,6 +11,10 @@ DIR_DICT = {
 }
 
 
+class OutOfBoundsError(Exception):
+    pass
+
+
 class Sprite(ABC):
     """Class for sprites."""
 
@@ -27,8 +31,11 @@ class Sprite(ABC):
             self.location[1] += DIR_DICT[movement][1]
         except TypeError:
             if type(movement) == int:
-                self.location[0] = map_dict.reverse_led_map[movement][0]
-                self.location[1] = map_dict.reverse_led_map[movement][1]
+                try:
+                    self.location[0] = map_dict.reverse_led_map[movement][0]
+                    self.location[1] = map_dict.reverse_led_map[movement][1]
+                except KeyError:
+                    raise OutOfBoundsError
             else:
                 if len(movement) != 2:
                     raise ValueError("movement should be a 2-tuple!")
@@ -36,9 +43,16 @@ class Sprite(ABC):
         except KeyError:
             raise ValueError("That was a bad string for movement")
 
+        if tuple(self.location) not in map_dict.led_map:
+            raise OutOfBoundsError
+
     @abstractmethod
     def encounter(self, other, prev_loc):
         return True
+
+    @abstractmethod
+    def hit_boundary(self, prev_loc):
+        pass
 
 
 class RigidSprite(Sprite):
@@ -46,8 +60,11 @@ class RigidSprite(Sprite):
         self.move(prev_loc)
         return True
 
+    def hit_boundary(self, prev_loc):
+        self.move(prev_loc)
 
-class HungrySprite(Sprite):
+
+class HungrySprite(RigidSprite):
     def encounter(self, other, prev_loc):
         if self.dead or other.dead:
             return True

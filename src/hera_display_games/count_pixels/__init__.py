@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """A simple simulation of a random walk"""
 import click
-from hera_display_games.core import mechanics, map_dict
+from hera_display_games.core import board, map_dict
 import time
 import random
 
@@ -20,12 +20,12 @@ def main(speed, use_screen):
     if not 1 <= speed <= 100:
         raise ValueError("speed must be between 1 and 100")
 
-    sprite = mechanics.Sprite([0, 0])
+    sprite = board.Sprite([0, 0])
 
     if not use_screen:
-        my_board = mechanics.Board(sprites=[sprite])
+        my_board = board.Board(sprites=[sprite])
     else:
-        my_board = mechanics.VirtualBoard(sprites=[sprite])
+        my_board = board.VirtualBoard(sprites=[sprite])
 
     my_board.draw()
 

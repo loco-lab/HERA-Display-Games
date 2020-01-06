@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """A simple simulation of a random walk"""
 import click
-from hera_display_games.core import mechanics, sprites, map_dict
+from hera_display_games.core import board, sprites, map_dict
 import asyncio
 import random
 
@@ -56,9 +56,9 @@ def main(speed, nsprites, eat, use_screen):
     loop = asyncio.get_event_loop()
 
     if not use_screen:
-        my_board = mechanics.Board(sprites=my_sprites)
+        my_board = board.Board(sprites=my_sprites)
     else:
-        my_board = mechanics.VirtualBoard(sprites=my_sprites)
+        my_board = board.VirtualBoard(sprites=my_sprites)
 
     my_board.draw()
 
