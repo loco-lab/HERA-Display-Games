@@ -4,7 +4,7 @@
 
 import numpy as np
 import asyncio
-from hera_display_games.core import mechanics, keymapper
+from hera_display_games.core import board, keymapper, sprites
 import click
 
 
@@ -14,11 +14,11 @@ async def recolor(sprite):
         sprite.color = np.random.randint(0, 255, size=3).tolist()
 
 
-async def move_sprite(device, sprite):
+async def move_sprite(device, my_board, sprite):
     while True:
         response = await keymapper.map_movement(device)
         if response in ["ul", "ur", "dl", "dr", "r", "l"]:
-            sprite.move(response)
+            my_board.move_sprite(sprite, response)
         elif response in ["r-trigger", "l-trigger"]:
             sprite.color = np.random.randint(0, 255, size=3).astype(int).tolist()
 
@@ -49,14 +49,14 @@ def pygame_event_loop(loop, event_queue):
 )
 @click.option("--input", default="gamepad", type=click.Choice(["gamepad", "keyboard"]))
 def main(use_screen, input):
-    my_sprite = mechanics.Sprite(np.array([0, 0]), color=[3, 137, 255])
+    my_sprite = sprites.RigidSprite(np.array([0, 0]), color=[3, 137, 255])
     loop = asyncio.get_event_loop()
     event_queue = asyncio.Queue()
 
     if not use_screen:
-        my_board = mechanics.Board(sprites=[my_sprite])
+        my_board = board.Board(sprites=[my_sprite])
     else:
-        my_board = mechanics.VirtualBoard(sprites=[my_sprite])
+        my_board = board.VirtualBoard(sprites=[my_sprite])
     my_board.draw()
 
     if input == "gamepad":
@@ -68,7 +68,7 @@ def main(use_screen, input):
         raise ValueError("incorrect input")
 
     color_task = asyncio.ensure_future(recolor(my_sprite))
-    move_task = asyncio.ensure_future(move_sprite(device, my_sprite))
+    move_task = asyncio.ensure_future(move_sprite(device, my_board, my_sprite))
     board_task = asyncio.ensure_future(update_board(my_board))
     try:
         loop.run_forever()
