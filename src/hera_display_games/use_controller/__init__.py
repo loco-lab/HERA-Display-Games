@@ -2,16 +2,26 @@
 # -*- coding: utf-8 -*-
 """hello please"""
 
-import numpy as np
 import asyncio
-from hera_display_games.core import board, keymapper, sprites
+import random
+import sys
+
 import click
+from hera_display_games.core import board, keymapper, sprites
+
+
+def random_rgb(low=0, high=255):
+    return (random.randint(low, high), random.randint(low, high), random.randint(low, high))
+
+
+def random_colors(low=0, high=255, n=1):
+    return [random_rgb(low, high) for i in range(n)]
 
 
 async def recolor(sprite):
     while True:
         await asyncio.sleep(5)
-        sprite.color = np.random.randint(0, 255, size=3).tolist()
+        sprite.color = random_colors(n=len(sprite.region))
 
 
 async def move_sprite(device, my_board, sprite):
@@ -19,8 +29,9 @@ async def move_sprite(device, my_board, sprite):
         response = await keymapper.map_movement(device)
         if response in ["ul", "ur", "dl", "dr", "r", "l"]:
             my_board.move_sprite(sprite, response)
+
         elif response in ["r-trigger", "l-trigger"]:
-            sprite.color = np.random.randint(0, 255, size=3).astype(int).tolist()
+            sprite.color = random_colors(n=len(sprite.region))
 
 
 async def update_board(board, speed=10.0):
@@ -49,7 +60,7 @@ def pygame_event_loop(loop, event_queue):
 )
 @click.option("--input", default="gamepad", type=click.Choice(["gamepad", "keyboard"]))
 def main(use_screen, input):
-    my_sprite = sprites.RigidSprite(np.array([0, 0]), color=[3, 137, 255])
+    my_sprite = sprites.RigidSprite((0, 0), color=(3, 137, 255))
     loop = asyncio.get_event_loop()
     event_queue = asyncio.Queue()
 
