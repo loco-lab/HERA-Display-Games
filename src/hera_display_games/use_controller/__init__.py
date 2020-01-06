@@ -4,7 +4,7 @@
 
 import numpy as np
 import asyncio
-from hera_display_games.core import board, keymapper
+from hera_display_games.core import board, keymapper, sprites
 import click
 
 
@@ -49,7 +49,7 @@ def pygame_event_loop(loop, event_queue):
 )
 @click.option("--input", default="gamepad", type=click.Choice(["gamepad", "keyboard"]))
 def main(use_screen, input):
-    my_sprite = board.Sprite(np.array([0, 0]), color=[3, 137, 255])
+    my_sprite = sprites.RigidSprite(np.array([0, 0]), color=[3, 137, 255])
     loop = asyncio.get_event_loop()
     event_queue = asyncio.Queue()
 

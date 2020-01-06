@@ -6,7 +6,7 @@ except ImportError:
     HAVE_NEOPIXEL = False
 
 import math
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 try:
     import pygame
@@ -47,8 +47,7 @@ class _BoardBase(ABC):
         """Initialize a Strip object that deals with the actual pixel colours."""
         pass
 
-    @abstractmethod
-    @property
+    @abstractproperty
     def npixels(self):
         pass
 

@@ -26,22 +26,24 @@ class Sprite(ABC):
         self.id = id
 
     def move(self, movement):
-        try:
-            self.location[0] += DIR_DICT[movement][0]
-            self.location[1] += DIR_DICT[movement][1]
-        except TypeError:
-            if type(movement) == int:
-                try:
-                    self.location[0] = map_dict.reverse_led_map[movement][0]
-                    self.location[1] = map_dict.reverse_led_map[movement][1]
-                except KeyError:
-                    raise OutOfBoundsError
-            else:
-                if len(movement) != 2:
-                    raise ValueError("movement should be a 2-tuple!")
-                self.location = movement.copy()
-        except KeyError:
-            raise ValueError("That was a bad string for movement")
+        if isinstance(movement, int):
+            try:
+                self.location[0] = map_dict.reverse_led_map[movement][0]
+                self.location[1] = map_dict.reverse_led_map[movement][1]
+            except KeyError:
+                raise OutOfBoundsError
+        elif isinstance(movement, str):
+            try:
+                self.location[0] += DIR_DICT[movement][0]
+                self.location[1] += DIR_DICT[movement][1]
+            except KeyError:
+                raise ValueError("That was a bad string for movement")
+        elif hasattr(movement, "__len__"):
+            if len(movement) != 2:
+                raise ValueError("movement should be a 2-tuple!")
+            self.location = movement.copy()
+        else:
+            raise ValueError("Could not understand movement type.")
 
         if tuple(self.location) not in map_dict.led_map:
             raise OutOfBoundsError

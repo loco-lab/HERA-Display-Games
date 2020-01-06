@@ -19,7 +19,7 @@ def main(speed, use_screen):
     if not 1 <= speed <= 100:
         raise ValueError("speed must be between 1 and 100")
 
-    sprite = sprites.Sprite([0, 0])
+    sprite = sprites.RigidSprite([0, 0])
 
     if not use_screen:
         my_board = board.Board(sprites=[sprite])
