@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 """A simple simulation of a random walk"""
 import click
-from hera_display_games.core import mechanics, sprites, keymapper, map_dict
+from hera_display_games.core import mechanics, sprites, map_dict
 import asyncio
-import time
 import random
 
 
@@ -16,16 +15,6 @@ async def update_board(board, speed=10.0):
 
         board.draw()
         await asyncio.sleep(1.0 / speed)
-
-
-# event loop and other code adapted from
-# https://github.com/AlexElvers/pygame-with-asyncio
-def pygame_event_loop(loop, event_queue):
-    import pygame
-
-    while True:
-        event = pygame.event.wait()
-        asyncio.run_coroutine_threadsafe(event_queue.put(event), loop=loop)
 
 
 @click.command()
