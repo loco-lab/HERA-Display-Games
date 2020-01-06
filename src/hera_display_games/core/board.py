@@ -76,6 +76,7 @@ class _BoardBase(ABC):
             sprite.move(movement)
         except OutOfBoundsError:
             self.sprite_hit_boundary(sprite, prev_loc)
+
         # Check against other sprites.
         done = False
         while not done:

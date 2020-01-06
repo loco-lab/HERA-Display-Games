@@ -38,9 +38,15 @@ class Sprite(ABC):
         self.dead = False
         self.id = id
 
+    def _pixels_from_loc_and_region(self, loc, region):
+        return [(x + loc[0], y + loc[1]) for x, y in region]
+
+    def _region_from_loc_and_pixels(self, loc, pixels):
+        return [(x - loc[0], y - loc[1]) for x, y in pixels]
+
     @property
     def pixels(self):
-        return [(x + self.location[0], y + self.location[1]) for x, y in self.region]
+        return self._pixels_from_loc_and_region(self.location, self.region)
 
     def move(self, movement):
         if isinstance(movement, int):
