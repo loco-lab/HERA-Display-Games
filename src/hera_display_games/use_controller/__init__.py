@@ -14,11 +14,11 @@ async def recolor(sprite):
         sprite.color = np.random.randint(0, 255, size=3).tolist()
 
 
-async def move_sprite(device, sprite):
+async def move_sprite(device, my_board, sprite):
     while True:
         response = await keymapper.map_movement(device)
         if response in ["ul", "ur", "dl", "dr", "r", "l"]:
-            sprite.move(response)
+            my_board.move_sprite(sprite, response)
         elif response in ["r-trigger", "l-trigger"]:
             sprite.color = np.random.randint(0, 255, size=3).astype(int).tolist()
 
@@ -68,7 +68,7 @@ def main(use_screen, input):
         raise ValueError("incorrect input")
 
     color_task = asyncio.ensure_future(recolor(my_sprite))
-    move_task = asyncio.ensure_future(move_sprite(device, my_sprite))
+    move_task = asyncio.ensure_future(move_sprite(device, my_board, my_sprite))
     board_task = asyncio.ensure_future(update_board(my_board))
     try:
         loop.run_forever()

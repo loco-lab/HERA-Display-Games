@@ -83,10 +83,6 @@ class _BoardBase(ABC):
                 if sprite is not other and sprite.location == other.location:
                     done = sprite.encounter(other, prev_loc,)
             self.kill_sprites()
-        # Check against the borders.
-        # also do logic like making it flash and stuff.
-        if tuple(sprite.location) not in map_dict.led_map:
-            sprite.move(prev_loc)
 
     def sprite_hit_boundary(self, sprite, prev_loc):
         """Decide on what to do if a sprite hits a boundary."""
