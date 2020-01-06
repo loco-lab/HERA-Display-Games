@@ -36,6 +36,7 @@ async def move_sprite(device, my_board, sprite):
 
 async def update_board(board, speed=10.0):
     while True:
+        print("updating board")
         await asyncio.sleep(1.0 / speed)
         board.draw()
 

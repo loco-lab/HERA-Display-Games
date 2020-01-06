@@ -7,18 +7,22 @@ import copy
 
 
 class Snake(sprites.Sprite):
-    def __init__(self, *args, direction="ul", **kwargs):
+    def __init__(self, *args, direction="ul", speed=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.initial_location = copy.copy(self.location)
         self.initial_pixels = self.pixels
         self.direction = direction
         self.initial_direction = copy.copy(direction)
+        self.speed = speed
 
     def encounter(self, other, prev_loc):
         if isinstance(other, Apple):
             self.grow(prev_loc)
+            self.speed += 1
             while other.location in self.pixels:
                 other.location = random.choice(list(map_dict.reverse_led_map.values()))
+                other.pixels = [other.location]
+
         elif other is self:
             self.die()
         else:
@@ -35,17 +39,21 @@ class Snake(sprites.Sprite):
                 self.location[0] + sprites.DIR_DICT[movement][0],
                 self.location[1] + sprites.DIR_DICT[movement][1],
             )
+
         except KeyError:
             raise ValueError("That was a bad string for movement")
 
         self.pixels = [self.location] + self.pixels[:-1]
+
+        if any(loc not in map_dict.led_map for loc in self.pixels):
+            raise sprites.OutOfBoundsError
 
     def die(self):
         self.location = copy.copy(self.initial_location)
         self.direction = self.initial_direction
         self.pixels = copy.copy(self.initial_pixels)
 
-    def hit_boundary(self):
+    def hit_boundary(self, prev_loc):
         self.die()
 
 
@@ -54,16 +62,16 @@ class Apple(sprites.RigidSprite):
         super().__init__(location=location, color=color, id=id)
 
 
-async def change_direction(device, snake):
+async def move_sprite(device, snake):
     while True:
         response = await keymapper.map_movement(device)
         if response in ["ul", "ur", "dl", "dr", "r", "l"]:
             snake.direction = response
 
 
-async def update_board(board, snake, speed=10.0):
+async def update_board(board, snake):
     while True:
-        await asyncio.sleep(1.0 / speed)
+        await asyncio.sleep(1.0 / snake.speed)
         board.move_sprite(snake, snake.direction)
         board.draw()
 
@@ -91,6 +99,18 @@ def main(use_screen, input):
     loop = asyncio.get_event_loop()
     event_queue = asyncio.Queue()
 
+    snake = Snake(location=(0, 2), pixels=[(0, 2), (0, 1), (0, 0)], color=(0, 255, 0), id="snake")
+    apple_loc = (0, 0)
+    while apple_loc in snake.pixels:
+        apple_loc = random.choice(list(map_dict.reverse_led_map.values()))
+    apple = Apple(location=apple_loc)
+
+    if not use_screen:
+        my_board = board.Board(sprites=[snake, apple])
+    else:
+        my_board = board.VirtualBoard(sprites=[snake, apple])
+    my_board.draw()
+
     if input == "gamepad":
         device = keymapper.GamePad()
     elif input == "keyboard":
@@ -99,17 +119,9 @@ def main(use_screen, input):
     else:
         raise ValueError("incorrect input")
 
-    snake = Snake(location=(0, 2), pixels=[(0, 2), (0, 1), (0, 0)], color=(0, 255, 0), id="snake")
-    apple = Apple(location=random.choice(list(map_dict.reverse_led_map.values())))
+    move_task = asyncio.ensure_future(move_sprite(device, snake))
+    board_task = asyncio.ensure_future(update_board(my_board, snake))
 
-    if not use_screen:
-        my_board = board.Board(sprites=[snake, apple])
-    else:
-        my_board = board.VirtualBoard(sprites=[snake, apple])
-    my_board.draw()
-
-    move_task = asyncio.ensure_future(change_direction(device, snake))
-    board_task = asyncio.ensure_future(update_board(my_board))
     try:
         loop.run_forever()
     except KeyboardInterrupt:

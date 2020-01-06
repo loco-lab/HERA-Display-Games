@@ -71,7 +71,7 @@ class _BoardBase(ABC):
 
     def move_sprite(self, sprite, movement):
 
-        prev_loc = copy.copy(sprite.location)
+        prev_loc = copy.copy(sprite.pixels)
         try:
             sprite.move(movement)
         except OutOfBoundsError:
@@ -86,6 +86,8 @@ class _BoardBase(ABC):
                     sprite_loc in other.pixels for sprite_loc in sprite.pixels
                 ):
                     done = sprite.encounter(other, prev_loc,)
+                if sprite is other and len(set(sprite.pixels)) != len(sprite.pixels):
+                    done = sprite.encounter(sprite, prev_loc,)
             self.kill_sprites()
 
     def sprite_hit_boundary(self, sprite, prev_loc):
@@ -103,9 +105,11 @@ class _BoardBase(ABC):
                 self.set_pix(pixel, self.bg[tuple(pixel)])
 
         for i, sp in enumerate(self.sprites):
-            for color, pixel in zip(sp.color, sp.pixels):
-                self.set_pix(pixel, color)
-
+            for i, pixel in enumerate(sp.pixels):
+                if isinstance(sp.color, tuple):
+                    self.set_pix(pixel, sp.color)
+                else:
+                    self.set_pix(pixel, sp.color[i])
         self.prev_sprite_pixels = [sp.pixels.copy() for sp in self.sprites]
         self.strip.show()
 
