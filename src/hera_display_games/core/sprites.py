@@ -29,7 +29,7 @@ class Sprite(ABC):
         assert location in self.pixels, "the pixels need to contain the location"
 
         if len(color) == 3 and isinstance(color[0], int):
-            self.color = [color] * len(self.region)
+            self.color = [color] * len(self.pixels)
         elif isinstance(color[0], tuple) and len(color[0]) == 3:
             self.color = list(color)
         else:
