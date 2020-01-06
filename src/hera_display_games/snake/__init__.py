@@ -8,8 +8,9 @@ import copy
 
 class Snake(sprites.Sprite):
     def __init__(self, *args, direction="ul", **kwargs):
-        super(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.initial_location = copy.copy(self.location)
+        self.initial_pixels = self.pixels
         self.direction = direction
         self.initial_direction = copy.copy(direction)
 
@@ -26,13 +27,9 @@ class Snake(sprites.Sprite):
         return True
 
     def grow(self, prev_loc):
-        pass
-        # prev_pixels = [(x + prev_loc[0], y + prev_loc[1]) for x, y in self.region]
+        self.pixels.append(prev_loc[-1])
 
     def move(self, movement):
-        current_pixels = self.pixels.copy()
-        # prev_loc = self.location
-
         try:
             self.location = (
                 self.location[0] + sprites.DIR_DICT[movement][0],
@@ -40,13 +37,13 @@ class Snake(sprites.Sprite):
             )
         except KeyError:
             raise ValueError("That was a bad string for movement")
-        # new_head = (0, 0)
-        # new_body = self._region_from_loc_and_pixels(prev_loc, current_pixels[:-1])
-        self.region = self._region_from_loc_and_pixels(self.loc, current_pixels[:-1])
+
+        self.pixels = [self.location] + self.pixels[:-1]
 
     def die(self):
-        self.location = self.initial_location
+        self.location = copy.copy(self.initial_location)
         self.direction = self.initial_direction
+        self.pixels = copy.copy(self.initial_pixels)
 
     def hit_boundary(self):
         self.die()
@@ -102,7 +99,7 @@ def main(use_screen, input):
     else:
         raise ValueError("incorrect input")
 
-    snake = Snake(location=(0, 2), region=[(0, 0), (0, -1), (0, -2)], color=(0, 255, 0), id="snake")
+    snake = Snake(location=(0, 2), pixels=[(0, 2), (0, 1), (0, 0)], color=(0, 255, 0), id="snake")
     apple = Apple(location=random.choice(list(map_dict.reverse_led_map.values())))
 
     if not use_screen:
