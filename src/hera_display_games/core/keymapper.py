@@ -144,6 +144,16 @@ class KeyBoardArrows(Device):
                 else:
                     return event.key, 0
 
+    @staticmethod
+    def pygame_event_loop(loop, event_queue):
+        """
+        event loop and other code adapted from
+        https://github.com/AlexElvers/pygame-with-asyncio
+        """
+        while True:
+            event = pygame.event.wait()
+            asyncio.run_coroutine_threadsafe(event_queue.put(event), loop=loop)
+
 
 async def map_movement(device):
     """Return human readable movement condition based on input.
