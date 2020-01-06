@@ -20,11 +20,13 @@ class OutOfBoundsError(Exception):
 class Sprite(ABC):
     """Class for sprites."""
 
-    def __init__(self, location=(0, 0), region=None, color=(0, 255, 0), id=None):
+    def __init__(self, location=(0, 0), pixels=None, color=(0, 255, 0), id=None):
         """Init for sprites."""
         self.location = location
 
-        self.region = region or [location]
+        self.pixels = pixels or [location]
+
+        assert location in self.pixels, "the pixels need to contain the location"
 
         if len(color) == 3 and isinstance(color[0], int):
             self.color = [color] * len(self.region)
@@ -37,10 +39,6 @@ class Sprite(ABC):
 
         self.dead = False
         self.id = id
-
-    @property
-    def pixels(self):
-        return [(x + self.location[0], y + self.location[1]) for x, y in self.region]
 
     def move(self, movement):
         if isinstance(movement, int):
