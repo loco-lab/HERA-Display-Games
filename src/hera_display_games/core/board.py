@@ -17,6 +17,7 @@ except ImportError:
 
 from . import map_dict
 from .sprites import OutOfBoundsError
+import copy
 
 
 class _BoardBase(ABC):
@@ -27,7 +28,7 @@ class _BoardBase(ABC):
         """Init for the board."""
 
         self.sprites = sprites or []
-        self.last_locs = [sp.location.copy() for sp in self.sprites]
+        self.prev_sprite_pixels = [sp.pixels.copy() for sp in self.sprites]
 
         self.moved_sprites = []
 
@@ -69,18 +70,20 @@ class _BoardBase(ABC):
         self.strip.show()
 
     def move_sprite(self, sprite, movement):
-        prev_loc = sprite.location.copy()
+
+        prev_loc = copy.copy(sprite.location)
         try:
             sprite.move(movement)
         except OutOfBoundsError:
             self.sprite_hit_boundary(sprite, prev_loc)
-
         # Check against other sprites.
         done = False
         while not done:
             done = True
             for other in self.sprites:
-                if sprite is not other and sprite.location == other.location:
+                if sprite is not other and any(
+                    sprite_loc in other.pixels for sprite_loc in sprite.pixels
+                ):
                     done = sprite.encounter(other, prev_loc,)
             self.kill_sprites()
 
@@ -94,13 +97,15 @@ class _BoardBase(ABC):
     def draw(self):
         """Draw the board and update the display"""
         # Update previous position of sprite with the background
-        for loc in self.last_locs:
-            self.set_pix(loc, self.bg[tuple(loc)])
+        for pixels in self.prev_sprite_pixels:
+            for pixel in pixels:
+                self.set_pix(pixel, self.bg[tuple(pixel)])
 
         for i, sp in enumerate(self.sprites):
-            self.set_pix(sp.location, sp.color)
+            for color, pixel in zip(sp.color, sp.pixels):
+                self.set_pix(pixel, color)
 
-        self.last_locs = [sp.location.copy() for sp in self.sprites]
+        self.prev_sprite_pixels = [sp.pixels.copy() for sp in self.sprites]
         self.strip.show()
 
 
